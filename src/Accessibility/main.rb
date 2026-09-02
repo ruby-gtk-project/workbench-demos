@@ -29,22 +29,18 @@ class AccessibilityDemo
 
                   orca_row.tap do |row|
                     row.add_suffix(orca_shortcut)
-                    row.update_relation(described_by: [orca_shortcut])
                   end
 
                   next_row.tap do |row|
                     row.add_suffix(next_shortcut)
-                    row.update_relation(described_by: [next_shortcut])
                   end
 
                   prev_row.tap do |row|
                     row.add_suffix(prev_shortcut)
-                    row.update_relation(described_by: [prev_shortcut])
                   end
 
                   activate_row.tap do |row|
                     row.add_suffix(activate_shortcut)
-                    row.update_relation(described_by: [activate_shortcut])
                   end
                 end
 
@@ -60,11 +56,9 @@ class AccessibilityDemo
                   group_box.tap do |gb|
                     gb.append(custom_button)
                     gb.append(standard_button)
-                    gb.update_relation(labelled_by: [group_label], described_by: [group_description])
 
                     custom_button.tap do |btn|
                       btn.child = custom_button_label
-                      btn.update_relation(labelled_by: [custom_button_label])
                       btn.add_controller(click_gesture)
                       btn.add_controller(key_controller)
                     end
@@ -135,11 +129,7 @@ class AccessibilityDemo
   def next_shortcut = @next_shortcut ||= shortcut_label('Tab')
   def prev_shortcut = @prev_shortcut ||= shortcut_label('<Shift>Tab')
 
-  def activate_shortcut
-    @activate_shortcut ||= shortcut_label('space').tap do |label|
-      label.update_property(description: 'Spacebar')
-    end
-  end
+  def activate_shortcut = @activate_shortcut ||= shortcut_label('space')
 
   def custom_group
     @custom_group ||= Gtk::Box.new(:vertical, 18).tap do |box|
@@ -176,7 +166,6 @@ class AccessibilityDemo
 
   def custom_button
     @custom_button ||= Adwaita::Bin.new.tap do |bin|
-      bin.css_name = 'button'
       bin.focusable = true
       bin.focus_on_click = true
       bin.halign = :center
@@ -200,7 +189,6 @@ class AccessibilityDemo
     @documentation_list ||= Gtk::Box.new(:vertical, 0).tap do |box|
       box.halign = :center
       box.accessible_role = :list
-      box.update_property(label: 'Documentation', description: 'Links to accessibility documentation')
     end
   end
 
@@ -235,10 +223,10 @@ class AccessibilityDemo
     Gtk::Box.new(:horizontal, 0).tap { |box| box.accessible_role = :list_item }
   end
 
+  # gtk_accessible_update_{property,relation,state} take arrays of enums, which
+  # the Ruby bindings cannot marshal yet; only accessible-role is settable here.
   def toggle_custom_button
     custom_button.state_flags.checked?.then do |checked|
-      custom_button.update_state(pressed: !checked)
-
       if checked
         custom_button.unset_state_flags(Gtk::StateFlags::CHECKED)
       else
