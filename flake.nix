@@ -28,6 +28,7 @@
           gtksourceview5
           libgudev # libmanette's typelib dependency
           libmanette
+          librsvg
           libshumate
           libspelling
           libsoup_3
