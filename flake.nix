@@ -26,6 +26,8 @@
           gtk4
           libadwaita
           gtksourceview5
+          libgudev # libmanette's typelib dependency
+          libmanette
           libshumate
           libspelling
           libsoup_3
