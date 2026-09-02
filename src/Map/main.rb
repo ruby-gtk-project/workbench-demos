@@ -179,11 +179,13 @@ class MapDemo
   end
 
   def place_marker(x, y)
-    return unless button_marker.active?
-
-    viewport.widget_coords_to_location(map_widget, x, y).then do |latitude, longitude|
-      marker.set_location(latitude, longitude)
-      puts "Marker placed at #{latitude}, #{longitude}"
+    button_marker.active?.then do |placing|
+      if placing
+        viewport.widget_coords_to_location(map_widget, x, y).then do |latitude, longitude|
+          marker.set_location(latitude, longitude)
+          puts "Marker placed at #{latitude}, #{longitude}"
+        end
+      end
     end
   end
 
