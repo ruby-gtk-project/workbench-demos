@@ -266,3 +266,114 @@ specification installed for it (2.6.9)").
   options argument cannot be omitted.
 - The Wikimedia API used by the HTTP Request demo rejects requests without a
   `User-Agent` header — not a binding issue, but it looks like one.
+
+---
+
+## 12. GtkWidget virtual functions cannot be overridden from Ruby
+
+Subclassing `Gtk::Widget` works and the object constructs, but the bindings
+never dispatch `snapshot` or `measure` to the Ruby subclass — the methods are
+simply never called, with no error:
+
+```ruby
+class MyWidget < Gtk::Widget
+  type_register
+  def snapshot(sn) = puts('never printed')
+  def measure(orientation, for_size) = [100, 100, -1, -1]
+end
+```
+
+**Workaround** — draw into a `Gtk::DrawingArea` with `set_draw_func` instead.
+The Snapshot demo keeps the original's `Gsk::Path` and renders it through
+`Gsk::Path#to_cairo`, so only the compositing layer changes.
+
+**Affects** — `src/Snapshot/main.rb`.
+
+---
+
+## 13. Widget subclasses inherit their parent's constructor, which then fails
+
+`Gtk::ShortcutsWindow.new` runs `Gtk::Window#initialize` and dies with
+`GtkWindow is not subtype of GtkShortcutsWindow`. `Gtk::ShortcutsSection.new`
+inherits `Gtk::Box#initialize` and demands an orientation argument.
+
+**Workaround** — instantiate the type through a `Gtk::Builder`:
+
+```ruby
+Gtk::Builder.new(string: '<interface><object class="GtkShortcutsWindow" id="w"/></interface>')['w']
+```
+
+The Shortcuts Window demo generates the whole `<interface>` document from a
+Ruby hash of groups and shortcuts.
+
+**Affects** — `src/Shortcuts Window/main.rb`.
+
+---
+
+## 14. `Adwaita::ApplicationWindow` does not accept a child
+
+Confirms the skill's warning, with the precise failure:
+
+```
+Adwaita-ERROR: gtk_window_set_child() is not supported for AdwApplicationWindow
+```
+
+and `add_breakpoint` on it hits
+`adw_breakpoint_bin_add_breakpoint: assertion 'ADW_IS_BREAKPOINT_BIN (self)' failed`.
+
+**Workaround** — `Gtk::ApplicationWindow` with an `Adwaita::BreakpointBin` as
+its child; the bin takes the breakpoints.
+
+**Affects** — `src/Navigation Split View/main.rb`,
+`src/Overlay Split View/main.rb`, `src/View Switcher/main.rb`.
+
+---
+
+## 15. `Gtk::ScaleButton.new` takes an options hash, not positional arguments
+
+```ruby
+Gtk::ScaleButton.new(0, 100, 15, icons)   # wrong number of arguments (given 4, expected 0..1)
+Gtk::ScaleButton.new(min: 0, max: 100, step: 15, icons: icons)  # works
+```
+
+The gem overrides `initialize` with a hash-based signature (see
+`gtk4/scale-button.rb`); most other widgets keep positional arguments, so this
+one is easy to get wrong.
+
+**Affects** — `src/Scale/main.rb`.
+
+---
+
+## 16. Named constructors are frequently not exposed
+
+`shumate_map_source_registry_new_with_defaults` and
+`rsvg_handle_new_from_file` have no Ruby counterpart; only the plain `new` (or
+a different overload) is bound.
+
+**Workarounds**
+
+```ruby
+Shumate::MapSourceRegistry.new.tap(&:populate_defaults)
+Rsvg::Handle.new(Gio::File.new_for_path(path), 0, nil)
+```
+
+**Affects** — `src/Map/main.rb`, `src/SVG/main.rb`.
+
+---
+
+## 17. `Pango::AttrList.parse` does not exist
+
+The function is bound as `Pango::AttrList.from_string` (and
+`Pango.attr_list_from_string`), not under the C name's usual Ruby shape.
+
+**Affects** — `src/Menu/main.rb`, `src/Text Colors/main.rb`.
+
+---
+
+## 18. `GtkSource.init` is not exposed — and is not needed
+
+The upstream demos call `GtkSource.init()` explicitly. In Ruby,
+`require 'gtksourceview5'` performs the initialisation and no `init` method
+exists; calling it raises `undefined method 'init' for module GtkSource`.
+
+**Affects** — `src/Source View/main.rb`, `src/Spell Checker/main.rb`.
