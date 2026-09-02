@@ -79,9 +79,11 @@ class CameraDemo
     end
   end
 
+  def session_bus = @session_bus ||= Gio.bus_get_sync(Gio::BusType::SESSION)
+
   def portal
     @portal ||= Gio::DBusProxy.new(
-      Gio::DBusConnection.session,
+      session_bus,
       Gio::DBusProxyFlags::NONE,
       nil,
       'org.freedesktop.portal.Desktop',
@@ -116,7 +118,7 @@ class CameraDemo
   end
 
   def await_response(request_path)
-    Gio::DBusConnection.session.signal_subscribe(
+    session_bus.signal_subscribe(
       'org.freedesktop.portal.Desktop',
       'org.freedesktop.portal.Request',
       'Response',
