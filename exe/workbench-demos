@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "workbench_demos"
+
+WorkbenchDemos::Application.new.build.run
